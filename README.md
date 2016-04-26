@@ -1,7 +1,6 @@
 # mbed-client-withPIR
-A simple example for mbed client with PIR sensor working for motion detection.
 
-This is the mbed Client example for mbed OS(linux version is not provided here. You can try it by yourself). You may need to take a look at [mbed-client-quickstart](https://github.com/ARMmbed/mbed-client-quickstart) first to finish the device registration.
+This is a simple example of mbed client with PIR sensor working for motion detection with mbed OS (linux version is not provided here. You can try it by yourself). You may need to take a look at [mbed-client-quickstart](https://github.com/ARMmbed/mbed-client-quickstart) first to finish the device registration.
 
 The application:
 
@@ -14,11 +13,11 @@ The application:
 
  Five [resources](https://docs.mbed.com/docs/mbed-device-connector-web-interfaces/en/latest/#the-mbed-device-connector-data-model) are included:
 
-* `Button(3200/0/5501)`. Number of presses of SW2(GET).
-* `LED Blink(3201/0/5850)`.Blink function, blinks `LED1` when executed(POST)
-* `Blink Patter(3201/0/5853)`. Used by the blink function to determine how to blink. In the format of `1000:500:1000:500:1000:500`(PUT).
-* `PIR State(3300/0/5700)`. Pir Control function, turn PIR sensor on or off by click the corresponding buttons(POST).
-* `Motion Detection(3300/0/5701)`. Number of motion detected by PIR sensor(GET).
+* `Button (3200/0/5501)`. Number of presses of SW2 (GET).
+* `LED Blink (3201/0/5850)`.Blink function, blinks `LED1` when executed (POST)
+* `Blink Patter (3201/0/5853)`. Used by the blink function to determine how to blink. In the format of `1000:500:1000:500:1000:500` (PUT).
+* `PIR State (3300/0/5700)`. Pir state function, turn PIR sensor on or off by click the corresponding buttons (POST).
+* `Motion Detection (3300/0/5701)`. Number of motion detected by PIR sensor (GET).
 
 ## Required hardware
 
@@ -39,7 +38,7 @@ The application prints debug messages over the serial port, so you can monitor i
 
 **Note:** Instructions to set this up are located [here](https://developer.mbed.org/handbook/SerialPC#host-interface-and-terminal-applications).
 
-After connecting you should see messages about connecting to mbed Device Connector:
+After the bin file downloaded and your board reset, you should see the below messages:
 
 ```
 In app_start()
@@ -52,7 +51,7 @@ Connecting to coap://api.connector.mbed.com:5684
 Registered object successfully!
 ```
 
-**Note:** Device name is the endpoint name you will need later on [Testing the application](https://github.com/ARMmbed/mbed-client-quickstart#testing-the-application) chapter.
+**Note:** Device name is the endpoint name you will need later on [Testing the application](https://github.com/MaggieMei/mbed-client-withPIR#testing-the-application) chapter.
 
 After you click the `SW2` button on your board you should see messages about the value changes:
 
@@ -60,7 +59,7 @@ After you click the `SW2` button on your board you should see messages about the
 handle_button_click, new value of counter is 1
 ```
 
-When you put something in front of PIR sensor, it will detect the motion and you should see messages like this:
+When you put something in front of PIR sensor, it will detect the motion and send you the messages like this:
 
 ```
 Hello! I've detected 1 times since reset
@@ -76,11 +75,10 @@ By experiments you will find the sensor is really sensitive.
 4. Enter `https://api.connector.mbed.com/endpoints/DEVICE_NAME/3200/0/5501` in the URI field and click **TEST API**. Replace `DEVICE_NAME` with your actual endpoint name. The device name can be found in the `source/security.h` file, see variable `MBED_ENDPOINT_NAME` or it can be found from the traces [Monitoring the application](https://github.com/ARMmbed/mbed-client-quickstart#monitoring-the-application).
 5. The number of times you pressed `SW2` is shown.
 6. Enter `https://api.connector.mbed.com/endpoints/DEVICE_NAME/3300/0/5700` in the URI field and click **TEST API**.
-7. The number of motio detected by the sensor is show.
-8. Press the `SW3` button to unregister from mbed Device Connector. You should see `Unregistered Object Successfully` printed to the serial port and LED starts blinking. 
-   This will also stop your application. Press the `RESET` button to run the program again.
+7. The number of motion detected by the sensor is shown.
+8. Press the `SW3` button to unregister from mbed Device Connector. You should see `Unregistered Object Successfully` printed to the serial port and LED starts blinking. This will also stop your application. Press the `RESET` button to run the program again.
 
-![9 times of motion was detected by the sensor, as shown by the API Console](clicks.png)
+![9 times of motion was detected by the sensor, as shown by the API Console](clicks.PNG)
 
 **NOTE:** If you get an error, for example `Server Response: 410 (Gone)`, clear your browser's cache, log out, and log back in. 
 **NOTE:** Only GET methods can be executed through [Device Connector > API Console](https://connector.mbed.com/#console). For the other methods check the [mbed Device Connector Quick Start](https://github.com/ARMmbed/mbed-connector-api-node-quickstart).
