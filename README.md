@@ -59,7 +59,7 @@ After you click the `SW2` button on your board you should see messages about the
 handle_button_click, new value of counter is 1
 ```
 
-When you put something in front of PIR sensor, it will detect the motion and send you the messages like this:
+When something moves in the detecting range of PIR sensor, the monitor will output the messages like this:
 
 ```
 Hello! I've detected 1 times since reset
