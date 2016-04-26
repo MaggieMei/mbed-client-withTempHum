@@ -1,18 +1,28 @@
-# mbed-client-with-PIR
-A simple example for mbed client
+# mbed-client-withPIR
+A simple example for mbed client with PIR sensor working for motion detection.
 
-This is the mbed Client example for mbed OS (we also have one for [Linux](https://github.com/ARMmbed/mbed-client-linux-example)). It demonstrates how to register a device with mbed Device Connector, how to read and write values, and how to deregister. If you are unfamiliar with mbed Device Connector, we recommend that you read [the introduction to the data model](https://docs.mbed.com/docs/mbed-device-connector-web-interfaces/en/latest/#the-mbed-device-connector-data-model) first.
+This is the mbed Client example for mbed OS(linux version is not provided here. You can try it by yourself). You may need to take a look at [mbed-client-quickstart](https://github.com/ARMmbed/mbed-client-quickstart) first to finish the device registration.
 
 The application:
 
 * Registers with mbed Device Connector.
 * Gives mbed Device Connector access to its resources (read and write).
-* Records the number of clicks on the device’s button and sends the number to mbed Device Connector.
-* Lets you control the blink pattern of the LED on the device (through mbed Device Connector).
+* Records the number of clicks on the device’s button as well as motion detected by [PIR sensor](http://www.seeedstudio.com/wiki/PIR_Motion_sensor_module#Introduction) and sends the number to mbed Device Connector.
+* Lets you control the state of PIR sensor and blink pattern of the LED on the device (through mbed Device Connector).
+
+## Application resources
+
+ Five [resources](https://docs.mbed.com/docs/mbed-device-connector-web-interfaces/en/latest/#the-mbed-device-connector-data-model) are included:
+
+* `Button(3200/0/5501)`. Number of presses of SW2(GET).
+* `LED Blink(3201/0/5850)`.Blink function, blinks `LED1` when executed(POST)
+* `Blink Patter(3201/0/5853)`. Used by the blink function to determine how to blink. In the format of `1000:500:1000:500:1000:500`(PUT).
+* `PIR State(3300/0/5700)`. Pir Control function, turn PIR sensor on or off by click the corresponding buttons(POST).
+* `Motion Detection(3300/0/5701)`. Number of motion detected by PIR sensor(GET).
 
 ## Required hardware
 
-* An [FRDM-K64F](http://developer.mbed.org/platforms/frdm-k64f/) board.
+* An [FRDM-K64F](http://developer.mbed.org/platforms/frdm-k64f/) board with [PIR sensor](http://www.seeedstudio.com/wiki/PIR_Motion_sensor_module#Introduction).
 * An Ethernet connection to the internet.
 * An Ethernet cable.
 * A micro-USB cable.
@@ -22,52 +32,6 @@ The application:
 * An [ARM mbed account](https://developer.mbed.org/account/login/?next=/).
 * [yotta](http://docs.yottabuild.org/#installing) - to build the example programs. To learn how to build mbed OS applications with yotta, see [the user guide](https://docs.mbed.com/docs/getting-started-mbed-os/en/latest/Full_Guide/app_on_yotta/#building-an-application).
 * A [serial port monitor](https://developer.mbed.org/handbook/SerialPC#host-interface-and-terminal-applications).
-
-## Setting up
-
-To set up the example, please:
-
-1. [Build the example](#Building-the-example).
-1. [Set up an IP address](#IP-address-setup). This step is optional.
-1. [Set a socket type](#Setting-socket-type). This step is optional.
-
-### Building the example
-
-To build the example application:
-
-1. Clone [this](https://github.com/ARMmbed/mbed-client-examples) repository.
-1. Go to [mbed Device Connector](https://connector.mbed.com) and log in with your mbed account.
-1. On mbed Device Connector, go to [My Devices > Security credentials](https://connector.mbed.com/#credentials), and get new credentials for your device by clicking the **Get my device security credentials** button.
-1. Store the credentials as `source/security.h` in this project's directory.
-1. Open a command line tool and navigate to the project’s directory.
-1. Set yotta's build target. For example, if you are targeting the FRDM-K64F board: `yotta target frdm-k64f-gcc`.
-1. Build the application by using the command `yotta build`. yotta builds a binary file in the project’s directory.
-1. Plug the Ethernet cable into the board.
-1. Plug the micro-USB cable into the **OpenSDA** port. The board is listed as a mass-storage device.
-1. Drag the binary `build/frdm-k64f-gcc/source/mbed-client-examples.bin` to the board to flash the application.
-1. The board is automatically programmed with the new binary. A flashing LED on it indicates that it is still working. When the LED stops blinking, the board is ready to work.
-1. Press the **RESET** button to run the program.
-1. For verification, continue to the [Monitoring the application](#monitoring-the-application) chapter.
-
-### IP address setup (optional)
-
-This example uses IPv4 to communicate with the [mbed Device Connector Server](https://api.connector.mbed.com). The example program should automatically get an IPv4 address from the router when connected over Ethernet.
-
-If your network does not have DHCP enabled, you have to manually assign a static IP address to the board. We recommend having DHCP enabled to make everything run smoothly.
-
-### Changing socket type (binding mode - optional)
-
-Your device can connect to mbed Device Connector via one of two binding modes: UDP or TCP. The default is UDP.
-
-To change the binding mode:
-
-1. In the `simpleclient.h` file, find the parameter `SOCKET_MODE`.
-1. The default is `M2MInterface::UDP`.
-1. To switch to TCP, change it to `M2MInterface::TCP`.
-
-Then re-build and flash the application.
-
-**Tip:** The instructions in this document remain the same, irrespective of the socket mode you select.
 
 ## Monitoring the application
 
@@ -79,8 +43,13 @@ After connecting you should see messages about connecting to mbed Device Connect
 
 ```
 In app_start()
-IP address 10.2.15.222
-Device name 6868df22-d353-4150-b90a-a878130859d9
+IP address 10.164.3.62
+Device name 1b0273c6-d31f-4337-8c5b-fbc8b1fff045
+
+SOCKET_MODE : UDP
+Connecting to coap://api.connector.mbed.com:5684
+
+Registered object successfully!
 ```
 
 **Note:** Device name is the endpoint name you will need later on [Testing the application](https://github.com/ARMmbed/mbed-client-quickstart#testing-the-application) chapter.
@@ -91,31 +60,27 @@ After you click the `SW2` button on your board you should see messages about the
 handle_button_click, new value of counter is 1
 ```
 
+When you put something in front of PIR sensor, it will detect the motion and you should see messages like this:
+
+```
+Hello! I've detected 1 times since reset
+```
+
+By experiments you will find the sensor is really sensitive.
+
 ## Testing the application
 
-1. Flash the application.
-1. Verify that the registration succeeded. You should see `Registered object successfully!` printed to the serial port.
-1. On mbed Device Connector, go to [My devices > Connected devices](https://connector.mbed.com/#endpoints). Your device should be listed here.
-1. Press the `SW2` button on the device a number of times (make a note of how many times you did that).
-1. Go to [Device Connector > API Console](https://connector.mbed.com/#console).
-1. Enter `https://api.connector.mbed.com/endpoints/DEVICE_NAME/3200/0/5501` in the URI field and click **TEST API**. Replace `DEVICE_NAME` with your actual endpoint name. The device name can be found in the `source/security.h` file, see variable `MBED_ENDPOINT_NAME` or it can be found from the traces [Monitoring the application](https://github.com/ARMmbed/mbed-client-quickstart#monitoring-the-application).
-1. The number of times you pressed `SW2` is shown.
-1. Press the `SW3` button to unregister from mbed Device Connector. You should see `Unregistered Object Successfully` printed to the serial port and LED starts blinking. 
+1. After device registration finished, go to [My devices > Connected devices](https://connector.mbed.com/#endpoints). Your device should be listed here.
+2. Press the `SW2` button on the device a number of times (make a note of how many times you did that).
+3. Go to [Device Connector > API Console](https://connector.mbed.com/#console).
+4. Enter `https://api.connector.mbed.com/endpoints/DEVICE_NAME/3200/0/5501` in the URI field and click **TEST API**. Replace `DEVICE_NAME` with your actual endpoint name. The device name can be found in the `source/security.h` file, see variable `MBED_ENDPOINT_NAME` or it can be found from the traces [Monitoring the application](https://github.com/ARMmbed/mbed-client-quickstart#monitoring-the-application).
+5. The number of times you pressed `SW2` is shown.
+6. Enter `https://api.connector.mbed.com/endpoints/DEVICE_NAME/3300/0/5700` in the URI field and click **TEST API**.
+7. The number of motio detected by the sensor is show.
+8. Press the `SW3` button to unregister from mbed Device Connector. You should see `Unregistered Object Successfully` printed to the serial port and LED starts blinking. 
    This will also stop your application. Press the `RESET` button to run the program again.
 
-
-![SW2 pressed five times, as shown by the API Console](clicks.png)
+![9 times of motion was detected by the sensor, as shown by the API Console](clicks.png)
 
 **NOTE:** If you get an error, for example `Server Response: 410 (Gone)`, clear your browser's cache, log out, and log back in. 
 **NOTE:** Only GET methods can be executed through [Device Connector > API Console](https://connector.mbed.com/#console). For the other methods check the [mbed Device Connector Quick Start](https://github.com/ARMmbed/mbed-connector-api-node-quickstart).
-
-### Application resources
-
-The application exposes three [resources](https://docs.mbed.com/docs/mbed-device-connector-web-interfaces/en/latest/#the-mbed-device-connector-data-model):
-
-1. `3200/0/5501`. Number of presses of SW2 (GET).
-2. `3201/0/5850`. Blink function, blinks `LED1` when executed (POST).
-3. `3201/0/5853`. Blink pattern, used by the blink function to determine how to blink. In the format of `1000:500:1000:500:1000:500` (PUT).
-
-For information on how to get notifications when resource 1 changes, or how to use resources 2 and 3, take a look at the [mbed Device Connector Quick Start](https://github.com/ARMmbed/mbed-connector-api-node-quickstart).
-
