@@ -264,7 +264,7 @@ public:
 
 private:
     M2MObject* pir_object;
-	bool flag = true; // true for PIR on, and false for off
+    bool flag = true; // true for PIR on, and false for off
     uint16_t counter = 0;
 };
 
