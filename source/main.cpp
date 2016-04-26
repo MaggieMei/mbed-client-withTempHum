@@ -200,15 +200,15 @@ public:
         // to be able to read this data easily in the Connector console, we'll use a string
         motion_res->set_value((uint8_t*)"0", 1);
 		
-		// create resource with ID '5701', which is the state of the sensor
+        // create resource with ID '5701', which is the state of the sensor
         M2MResource* con_res = pir_inst->create_dynamic_resource("5701", "PIR_Control",
-            M2MResourceInstance::OPAQUE, false);
+        M2MResourceInstance::OPAQUE, false);
 		
-		// we allow both writing and executing here and set the initial value
+        // we allow both writing and executing here and set the initial value
         con_res->set_operation(M2MBase::GET_PUT_POST_ALLOWED);
-		con_res->set_value((uint8_t*)"1", 1);
+        con_res->set_value((uint8_t*)"1", 1);
 		
-		// when a POST comes in, we want to execute the pir_control_callback
+        // when a POST comes in, we want to execute the pir_control_callback
         con_res->set_execute_function(execute_callback(this, &PIRResource::pir_control));
     }
 
@@ -216,29 +216,29 @@ public:
         return pir_object;
     }
 	
-	/*
-	 * When PIR state is changed, we sync the flag here and reset the count.
-	 */
-	void pir_control(void *data){
-		M2MObjectInstance* inst = pir_object->object_instance();
-		M2MResource::M2MExecuteParameter* param = (M2MResource::M2MExecuteParameter*)data;
+    /*
+     * When PIR state is changed, we sync the flag here and reset the count.
+     */
+    void pir_control(void *data){
+        M2MObjectInstance* inst = pir_object->object_instance();
+        M2MResource::M2MExecuteParameter* param = (M2MResource::M2MExecuteParameter*)data;
 		
-		uint8_t state = atoi((const char*)(param->get_argument_value()));
-		// PIR on, set flag true
-		if (state == 1){
-		    printf("PIR sensor is on!\n");
-			flag = true;
-		}
-		// PIR off, reset the count and motion detected times. set flag false
-		else{
-			printf("PIR sensor is off!\n");
-			counter = 0;
-			flag = false;
+        uint8_t state = atoi((const char*)(param->get_argument_value()));
+        // PIR on, set flag true
+        if (state == 1){
+            printf("PIR sensor is on!\n");
+            flag = true;
+        }
+        // PIR off, reset the count and motion detected times. set flag false
+        else{
+            printf("PIR sensor is off!\n");
+            counter = 0;
+            flag = false;
 			
-			M2MResource* motion_res = inst->resource("5700");
-			motion_res->set_value((uint8_t*)"0", 1);
-		}
-	}
+            M2MResource* motion_res = inst->resource("5700");
+            motion_res->set_value((uint8_t*)"0", 1);
+        }
+    }
 
     /*
      * When motion is detected, we read the current value of the click counter
@@ -248,18 +248,18 @@ public:
         M2MObjectInstance* inst = pir_object->object_instance();
         M2MResource* motion_res = inst->resource("5700");
 		
-		// if PIR is on, or nothing will be done
-		if (flag){
-			// up counter
-			counter++;
-			printf("Hello! I've detected %d times since reset\n", counter);
+        // if PIR is on, or nothing will be done
+        if (flag){
+            // up counter
+            counter++;
+            printf("Hello! I've detected %d times since reset\n", counter);
 
-			// serialize the value of counter as a string, and tell connector
-			stringstream ss;
-			ss << counter;
-			std::string stringified = ss.str();
-			motion_res->set_value((uint8_t*)stringified.c_str(), stringified.length());
-		}
+            // serialize the value of counter as a string, and tell connector
+            stringstream ss;
+            ss << counter;
+            std::string stringified = ss.str();
+            motion_res->set_value((uint8_t*)stringified.c_str(), stringified.length());
+        }
     }
 
 private:
@@ -290,7 +290,7 @@ void app_start(int /*argc*/, char* /*argv*/[]) {
     // we create our button, LED and PIR resources
     auto button_resource = new ButtonResource();
     auto led_resource = new LedResource();
-	auto pir_resource = new PIRResource();
+    auto pir_resource = new PIRResource();
 
     // Unregister button (SW3) press will unregister endpoint from connector.mbed.com
     unreg_button.fall(&mbed_client, &MbedClient::test_unregister);
