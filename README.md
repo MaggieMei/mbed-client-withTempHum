@@ -38,7 +38,7 @@ The application prints debug messages over the serial port, so you can monitor i
 
 **Note:** Instructions to set this up are located [here](https://developer.mbed.org/handbook/SerialPC#host-interface-and-terminal-applications).
 
-After the bin file downloaded and your board reset, you should see the below messages:
+After the bin file downloaded and your board reset, you should see the messages as below:
 
 ```
 In app_start()
