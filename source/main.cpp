@@ -18,15 +18,21 @@
 #include "security.h"
 #include "simpleclient.h"
 #include "lwipv4_init.h"
+#include "DHT22.h"
 #include <string>
 #include <sstream>
 #include <vector>
+#include <time.h>
 
 using namespace mbed::util;
 
 Serial &output = get_stdio_serial();
 
 EthernetInterface eth;
+Ticker flipper;
+Ticker flipper_temp;
+Ticker flipper_hum;
+DHT22 dht22(D4);
 
 // These are example resource values for the Device Object
 struct MbedClientDevice device = {
@@ -42,94 +48,10 @@ MbedClient mbed_client(device);
 // Set up Hardware interrupt button.
 InterruptIn obs_button(SW2);
 InterruptIn unreg_button(SW3);
-InterruptIn pir_button(D2);
 
 // LED Output
-DigitalOut led1(LED1);
-
-/*
- * The Led contains one property (pattern) and a function (blink).
- * When the function blink is executed, the pattern is read, and the LED
- * will blink based on the pattern.
- */
-class LedResource {
-public:
-    LedResource() {
-        // create ObjectID with metadata tag of '3201', which is 'digital output'
-        led_object = M2MInterfaceFactory::create_object("3201");
-        M2MObjectInstance* led_inst = led_object->create_object_instance();
-
-        // 5853 = Multi-state output
-        M2MResource* pattern_res = led_inst->create_dynamic_resource("5853", "Pattern",
-            M2MResourceInstance::STRING, false);
-        // read and write
-        pattern_res->set_operation(M2MBase::GET_PUT_ALLOWED);
-        // set initial pattern (toggle every 200ms. 7 toggles in total)
-        pattern_res->set_value((const uint8_t*)"500:500:500:500:500:500:500", 27);
-
-        // there's not really an execute LWM2M ID that matches... hmm...
-        M2MResource* led_res = led_inst->create_dynamic_resource("5850", "Blink",
-            M2MResourceInstance::OPAQUE, false);
-        // we allow executing a function here...
-        led_res->set_operation(M2MBase::POST_ALLOWED);
-        // when a POST comes in, we want to execute the led_execute_callback
-        led_res->set_execute_function(execute_callback(this, &LedResource::blink));
-    }
-
-    M2MObject* get_object() {
-        return led_object;
-    }
-
-    void blink(void *) {
-        // read the value of 'Pattern'
-        M2MObjectInstance* inst = led_object->object_instance();
-        M2MResource* res = inst->resource("5853");
-
-        // values in mbed Client are all buffers, and we need a vector of int's
-        uint8_t* buffIn = NULL;
-        uint32_t sizeIn;
-        res->get_value(buffIn, sizeIn);
-
-        // turn the buffer into a string, and initialize a vector<int> on the heap
-        std::string s((char*)buffIn, sizeIn);
-        std::vector<uint32_t>* v = new std::vector<uint32_t>;
-        std::stringstream ss(s);
-        std::string item;
-        // our pattern is something like 500:200:500, so parse that
-        while (std::getline(ss, item, ':')) {
-            // then convert to integer, and push to the vector
-            v->push_back(atoi((const char*)item.c_str()));
-        }
-
-        output.printf("led_execute_callback pattern=%s\r\n", s.c_str());
-
-        // do_blink is called with the vector, and starting at -1
-        do_blink(v, 0);
-    }
-
-private:
-    M2MObject* led_object;
-
-    void do_blink(std::vector<uint32_t>* pattern, uint16_t position) {
-        // blink the LED
-        led1 = !led1;
-
-        // up the position, if we reached the end of the vector
-        if (position >= pattern->size()) {
-            // free memory, and exit this function
-            delete pattern;
-            return;
-        }
-
-        // how long do we need to wait before the next blink?
-        uint32_t delay_ms = pattern->at(position);
-
-        // we create a FunctionPointer to this same function
-        FunctionPointer2<void, std::vector<uint32_t>*, uint16_t> fp(this, &LedResource::do_blink);
-        // and invoke it after `delay_ms` (upping position)
-        minar::Scheduler::postCallback(fp.bind(pattern, ++position)).delay(minar::milliseconds(delay_ms));
-    }
-};
+DigitalOut led2(LED2);
+DigitalOut led3(LED3);
 
 /*
  * The button contains one property (click count).
@@ -180,94 +102,99 @@ private:
     uint16_t counter = 0;
 };
 
-/*
- * The PIR contains two property(PIR control and motion count)
- * When "handle_motion_detected" is executed, the count updates only if the PIR is on.
+/* 
+ * Warning function when the temparature gets higher than 32 degrees
+ * LED2 will keep blinky
  */
-class PIRResource {
+void flip1() {
+    led2 = !led2;
+}
+
+/* 
+ * Warning function when the humidity gets higher than 120%rh
+ * LED3 will keep blinky
+ */
+void flip2() {
+    led3 = !led3;
+}
+
+/*
+ * The Temp&Hum sensor contains two property(temparature & humidity)
+ * When "handle_temphum" is executed, the new temparature and humidity will be obtained from the sensor.
+ */
+class TempHumResource {
 public:
-    PIRResource() {
+    TempHumResource() {
         // create ObjectID with metadata tag of '3300', which is 'digital input'
-        pir_object = M2MInterfaceFactory::create_object("3300");
-        M2MObjectInstance* pir_inst = pir_object->create_object_instance();
+        temphum_object = M2MInterfaceFactory::create_object("3300");
+        M2MObjectInstance* temphum_inst = temphum_object->create_object_instance();
 		
-        // create resource with ID '5700', which is digital input counter
-        M2MResource* motion_res = pir_inst->create_dynamic_resource("5700", "motion detect",
-            M2MResourceInstance::INTEGER, true /* observable */);
-        // we can read this value
-        motion_res->set_operation(M2MBase::GET_ALLOWED);
+        // create resource with ID '5700', which is the current temperature value
+        M2MResource* temp = temphum_inst->create_dynamic_resource("5700", "Current Temperature",
+            M2MResourceInstance::FLOAT, true /* observable */);
+        // we can read & write this value
+        temp->set_operation(M2MBase::GET_PUT_POST_ALLOWED);
         // set initial value (all values in mbed Client are buffers)
         // to be able to read this data easily in the Connector console, we'll use a string
-        motion_res->set_value((uint8_t*)"0", 1);
-		
-        // create resource with ID '5701', which is the state of the sensor
-        M2MResource* con_res = pir_inst->create_dynamic_resource("5701", "PIR_Control",
-        M2MResourceInstance::OPAQUE, false);
-		
-        // we allow both writing and executing here and set the initial value
-        con_res->set_operation(M2MBase::GET_PUT_POST_ALLOWED);
-        con_res->set_value((uint8_t*)"1", 1);
-		
-        // when a POST comes in, we want to execute the pir_control_callback
-        con_res->set_execute_function(execute_callback(this, &PIRResource::pir_control));
+        temp->set_value((uint8_t*)"25", 2);
+        
+        // create resource with ID '5701', which is the current humdity value
+        M2MResource* hum = temphum_inst->create_dynamic_resource("5701", "Current Humdity",
+            M2MResourceInstance::FLOAT, true /* observable */);
+        // we can read & write this value
+        hum->set_operation(M2MBase::GET_PUT_POST_ALLOWED);
+        // set initial value (all values in mbed Client are buffers)
+        // to be able to read this data easily in the Connector console, we'll use a string
+        hum->set_value((uint8_t*)"70", 2);
     }
 
     M2MObject* get_object() {
-        return pir_object;
+        return temphum_object;
     }
 	
     /*
-     * When PIR state is changed, we sync the flag here and reset the count.
+     * The function handle_temphum will be executed every two seconds
+     * to get the new value of temperature and humidity
+     * and then up the value with the new one.
      */
-    void pir_control(void *data){
-        M2MObjectInstance* inst = pir_object->object_instance();
-        M2MResource::M2MExecuteParameter* param = (M2MResource::M2MExecuteParameter*)data;
+    void handle_temphum() {
+        M2MObjectInstance* inst = temphum_object->object_instance();
+        M2MResource* temp = inst->resource("5700");
+        M2MResource* hum = inst->resource("5701");
+        float temp_value = 0.00, hum_value = 0.00; // used to store the new values
+        int error = 0;
 		
-        uint8_t state = atoi((const char*)(param->get_argument_value()));
-        // PIR on, set flag true
-        if (state == 1){
-            printf("PIR sensor is on!\n");
-            flag = true;
+	error = dht22.sample();
+        // read successfully
+        if (1 == error) {
+            // Get the temparature & humidity value from the sensor
+            temp_value = dht22.getTemperature()/10.0f;
+            hum_value = dht22.getHumidity()/10.0f;
+            printf("the current temperature is: %2.2f, the current humidity is: %2.2f  \r\n", temp_value, hum_value);
+            
+            // Send out the warnings when temp&hum get too high
+            if (temp_value > 32)
+                flipper_temp.attach(&flip1, 2.0);
+            if (hum_value > 120)
+                flipper_hum.attach(&flip2, 2.0);
+            
+        } else {  // read unsuccessfully
+            printf("Error: %d\n", error);
         }
-        // PIR off, reset the count and motion detected times. set flag false
-        else{
-            printf("PIR sensor is off!\n");
-            counter = 0;
-            flag = false;
-			
-            M2MResource* motion_res = inst->resource("5700");
-            motion_res->set_value((uint8_t*)"0", 1);
-        }
-    }
-
-    /*
-     * When motion is detected, we read the current value of the click counter
-     * from mbed Device Connector, then up the value with one.
-     */
-    void handle_motion_detected() {
-        M2MObjectInstance* inst = pir_object->object_instance();
-        M2MResource* motion_res = inst->resource("5700");
-		
-        // if PIR is on, or nothing will be done
-        if (flag){
-            // up counter
-            counter++;
-            printf("Hello! I've detected %d times since reset\n", counter);
-
-            // serialize the value of counter as a string, and tell connector
-            stringstream ss;
-            ss << counter;
-            std::string stringified = ss.str();
-            motion_res->set_value((uint8_t*)stringified.c_str(), stringified.length());
-        }
+        
+        // update the values in the temp&hum resource
+        stringstream ss_temp, ss_hum;
+        ss_temp << temp_value;
+        std::string stringified_temp = ss_temp.str();
+        temp->set_value((uint8_t*)stringified_temp.c_str(), stringified_temp.length());
+        ss_hum << hum_value;
+        std::string stringified_hum = ss_hum.str();
+        hum->set_value((uint8_t*)stringified_hum.c_str(), stringified_hum.length());
     }
 
 private:
-    M2MObject* pir_object;
-    bool flag = true; // true for PIR on, and false for off
-    uint16_t counter = 0;
+    M2MObject* temphum_object;
 };
-
 
 void app_start(int /*argc*/, char* /*argv*/[]) {
 
@@ -287,19 +214,19 @@ void app_start(int /*argc*/, char* /*argv*/[]) {
     output.printf("IP address %s\r\n", eth.getIPAddress());
     output.printf("Device name %s\r\n", MBED_ENDPOINT_NAME);
 
-    // we create our button, LED and PIR resources
+    // we create our button temp&hum resources
     auto button_resource = new ButtonResource();
-    auto led_resource = new LedResource();
-    auto pir_resource = new PIRResource();
+    auto temphum_resource = new TempHumResource();
+    led2 = led3 = 1; // turn off the leds
 
     // Unregister button (SW3) press will unregister endpoint from connector.mbed.com
     unreg_button.fall(&mbed_client, &MbedClient::test_unregister);
 
     // Observation Button (SW2) press will send update of endpoint resource values to connector
     obs_button.fall(button_resource, &ButtonResource::handle_button_click);
-
-    // Observation DigitalIn (D2) will send update of endpoint resource values to connector
-    pir_button.fall(pir_resource, &PIRResource::handle_motion_detected);
+    
+    // update the temp&hum every two seconds
+    flipper.attach(temphum_resource, &TempHumResource::handle_temphum, 2.0);
 	
     // Create endpoint interface to manage register and unregister
     mbed_client.create_interface();
@@ -314,8 +241,7 @@ void app_start(int /*argc*/, char* /*argv*/[]) {
     // Add objects to list
     object_list.push_back(device_object);
     object_list.push_back(button_resource->get_object());
-    object_list.push_back(led_resource->get_object());
-    object_list.push_back(pir_resource->get_object());
+    object_list.push_back(temphum_resource->get_object());
 
     // Set endpoint registration object
     mbed_client.set_register_object(register_object);
