@@ -1,13 +1,12 @@
-# mbed-client-withPIR
+# mbed-os-example-client-withTempHum
 
-This is a simple example of mbed client with PIR sensor working for motion detection with mbed OS (linux version is not provided here. You can try it by yourself). You may need to take a look at [mbed-client-quickstart](https://github.com/ARMmbed/mbed-client-quickstart) first to finish the device registration.
+This is a simple example of mbed client with Grove Temperature&Humidity Sensor working for temperature&humidity detection in real time with mbed OS. You may need to take a look at [mbed-client-quickstart](https://github.com/ARMmbed/mbed-client-quickstart) first to finish the device registration.
 
 The application:
 
 * Registers with mbed Device Connector.
 * Gives mbed Device Connector access to its resources (read and write).
-* Records the number of clicks on the device’s button as well as motion detected by [PIR sensor](http://www.seeedstudio.com/wiki/PIR_Motion_sensor_module#Introduction) and sends the number to mbed Device Connector.
-* Lets you control the state of PIR sensor and blink pattern of the LED on the device (through mbed Device Connector).
+* Records the number of clicks on the device’s button and temperature&humidity detected by the sensor](https://developer.mbed.org/components/Grove-TempHumi-Sensor/) and sends them to mbed Device Connector.
 
 ## Application resources
 
