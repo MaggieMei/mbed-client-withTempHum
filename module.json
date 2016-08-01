@@ -1,16 +1,23 @@
 {
-  "name": "mbed-client-quickstart",
-  "version": "1.1.0",
-  "description": "mbed Client Example for mbed",
-  "keywords": [
-    "mbed-client"
-  ],
-  "author": "yogesh.pande@arm.com",
-  "license": "Apache-2.0",
-  "extraIncludes": [],
-  "dependencies": {
-    "mbed-client": "^1.0.0"
-  },
-  "targetDependencies": {},
-  "bin": "./source/"
+    "config": {
+        "network-interface":{
+            "help": "options are ETHERNET,WIFI,MESH_LOWPAN_ND,MESH_THREAD",
+            "value": "ETHERNET"
+        },
+        "wifi-ssid": {
+            "help": "WiFi SSID",
+            "value": "\"SSID\""
+        },
+        "wifi-password": {
+            "help": "WiFi Password",
+            "value": "\"Password\""
+        }
+    },
+    "target_overrides": {
+        "*": {
+            "target.features_add": ["CLIENT", "COMMON_PAL"],
+            "mbed-client.reconnection-count": 3,
+            "mbed-client.reconnection-interval": 5
+        }
+    }
 }
