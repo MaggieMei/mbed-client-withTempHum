@@ -51,13 +51,14 @@ The application prints debug messages over the serial port, so you can monitor i
 After the bin file downloaded and your board reset, you should see the messages as below:
 
 ```
-In app_start()
-IP address 10.164.3.62
-Device name 1b0273c6-d31f-4337-8c5b-fbc8b1fff045
+Starting mbed Client example...
+Using Ethernet
+
+Connected to Network successfully
+IP address 10.164.2.82
 
 SOCKET_MODE : UDP
 Connecting to coap://api.connector.mbed.com:5684
-
 Registered object successfully!
 ```
 
@@ -72,7 +73,7 @@ handle_button_click, new value of counter is 1
 Every two seconds updated values of temperature and humidity should be displayed on the Terminal.
 
 ```
-Hello! I've detected 1 times since reset
+the current temperature is: 27.30, the current humidity is: 77.50
 ```
 
 ## Testing the application
@@ -87,8 +88,6 @@ Hello! I've detected 1 times since reset
 8. Enter `https://api.connector.mbed.com/endpoints/DEVICE_NAME/3300/0/5701` in the URI field and click **TEST API**.
 9. The value of current humidity will be shown.
 10. Press the `SW3` button to unregister from mbed Device Connector. You should see `Unregistered Object Successfully` printed to the serial port and LED starts blinking. This will also stop your application. Press the `RESET` button to run the program again.
-
-![9 times of motion was detected by the sensor, as shown by the API Console](clicks.PNG)
 
 **NOTE:** If you get an error, for example `Server Response: 410 (Gone)`, clear your browser's cache, log out, and log back in. 
 **NOTE:** Only GET methods can be executed through [Device Connector > API Console](https://connector.mbed.com/#console). For the other methods check the [mbed Device Connector Quick Start](https://github.com/ARMmbed/mbed-connector-api-node-quickstart).
