@@ -31,16 +31,16 @@ The application:
 
 ## Build the program
 To build the example application:
-1.	Clone [this]( https://github.com/MaggieMei/mbed-os-example-client-withTempHum) repository: `git clone https://github.com/MaggieMei/mbed-os-example-client-withTempHum`
-2.	Change to the project directory and deploy the mbed program with `mbed deploy`
-3.	Update mbed-os sources using the `mbed update` command.
-4.	Import DHT22 lib which is used for temperature & humidity sample: `mbed add https://developer.mbed.org/users/Julepalme/code/DHT22/`
-5.	Go to [mbed Device Connector]( https://connector.mbed.com/) and log in with your mbed account. Then go to My Devices > Security credentials and click the `Get my device security credentials` button to get new credentials for your device. Replace the contents in security.h of this project's directory with content copied above.
-6.	Build the application by selecting the hardware board and build the toolchain using the command `mbed compile -m K64F -t GCC_ARM -c -j0`. mbed-cli builds a binary file under the project’s `.build` directory.
-7.	Plug the Ethernet cable into the board if you are using Ethernet mode.
-8.	Drag the binary .build/K64F/GCC_ARM/mbed-os-example-client-withTempHum.bin to the board to flash the application.
-9.	The board is automatically programmed with the new binary. A flashing LED on it indicates that it is still working. When the LED stops blinking, the board is ready to work.
-10.	Press the RESET button on the board to run the program.
+1	Clone [this]( https://github.com/MaggieMei/mbed-os-example-client-withTempHum) repository: `git clone https://github.com/MaggieMei/mbed-os-example-client-withTempHum`
+2	Change to the project directory and deploy the mbed program with `mbed deploy`
+3	Update mbed-os sources using the `mbed update` command.
+4	Import DHT22 lib which is used for temperature & humidity sample: `mbed add https://developer.mbed.org/users/Julepalme/code/DHT22/`
+5	Go to [mbed Device Connector]( https://connector.mbed.com/) and log in with your mbed account. Then go to My Devices > Security credentials and click the `Get my device security credentials` button to get new credentials for your device. Replace the contents in security.h of this project's directory with content copied above.
+6	Build the application by selecting the hardware board and build the toolchain using the command `mbed compile -m K64F -t GCC_ARM -c -j0`. mbed-cli builds a binary file under the project’s `.build` directory.
+7	Plug the Ethernet cable into the board if you are using Ethernet mode.
+8	Drag the binary .build/K64F/GCC_ARM/mbed-os-example-client-withTempHum.bin to the board to flash the application.
+9	The board is automatically programmed with the new binary. A flashing LED on it indicates that it is still working. When the LED stops blinking, the board is ready to work.
+10	Press the RESET button on the board to run the program.
 
 ## Monitoring the application
 
